@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sit 725</title>
+    <!-- Import Google Icon Font -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Import materialize.css -->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection"/>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<!-- Navbar -->
+<nav>
+    <div class="nav-wrapper">
+        <a href="#" class="brand-logo">Calculator</a>
+        <!-- Suitable for different screen and consider adding additional pages for other tasks-->
+        <ul id="nav-mobile" class="right hide-on-med-and-down">
+            <li><a href="sass.html">Sass</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Welcome to My Web App</h1>
+    <p>This is a sample web calculator.</p>
+
+    <!-- Calculator Form -->
+    <div class="row">
+        <div class="input-field col s12">
+            <input id="num1" type="number" class="validate">
+            <label for="num1">Number 1</label>
+        </div>
+        <div class="input-field col s12">
+            <input id="num2" type="number" class="validate">
+            <label for="num2">Number 2</label>
+        </div>
+        <div class="col s12">
+            <a id="addBtn" class="waves-effect waves-light btn">Add</a>
+            <a id="subtractBtn" class="waves-effect waves-light btn">Subtract</a>
+            <a id="multiplyBtn" class="waves-effect waves-light btn">Multiply</a>
+            <a id="divideBtn" class="waves-effect waves-light btn">Divide</a>
+            <a id="historyBtn" class="waves-effect waves-light btn">Show History</a>
+        </div>
+    </div>
+
+    <!-- Div to display result -->
+    <div id="resultContainer" class="section"></div>
+
+    <!-- History Dialog -->
+    <div id="historyDialog" class="modal">
+        <div class="modal-content">
+            <h4>Calculation History</h4>
+            <ul id="historyList" class="collection"></ul>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
+            <a id="clearHistoryBtn" href="#!" class="waves-effect waves-red btn-flat">Clear History</a>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="js/materialize.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize modal
+    $('.modal').modal();
+
+    function calculate(operation) {
+        const num1 = $('#num1').val();
+        const num2 = $('#num2').val();
+        let expression;
+        
+        switch(operation) {
+            case 'add':
+                expression = `${num1} + ${num2}`;
+                break;
+            case 'subtract':
+                expression = `${num1} - ${num2}`;
+                break;
+            case 'multiply':
+                expression = `${num1} * ${num2}`;
+                break;
+            case 'divide':
+                expression = `${num1} / ${num2}`;
+                break;
+        }
+
+        const result = eval(expression);
+
+        $.ajax({
+            url: '/calculate',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ expression, result }),
+            success: function(response) {
+                console.log('Calculation response:', response); 
+                $('#resultContainer').html(`<h5>Result: ${response.result}</h5>`);
+            },
+            error: function(error) {
+                console.log('Error:', error);
+            }
+        });
+    }
+    //In order to show recent 10 times history
+    function fetchHistory() {
+        $.ajax({
+            url: '/history/last10',
+            type: 'GET',
+            success: function(response) {
+                console.log('Fetched history:', response); 
+                const historyList = $('#historyList');
+                historyList.empty();
+                response.forEach(item => {
+                    historyList.append(`<li class="collection-item">${item.expression} = ${item.result}</li>`);
+                });
+                $('#historyDialog').modal('open');
+            },
+            error: function(error) {
+                console.log('Error:', error);
+            }
+        });
+    }
+    //clc
+    function clearHistory() {
+        $.ajax({
+            url: '/history/clear',
+            type: 'DELETE',
+            success: function(response) {
+                console.log('History cleared:', response);
+                $('#historyList').empty();
+            },
+            error: function(error) {
+                console.log('Error:', error);
+            }
+        });
+    }
+
+    $('#addBtn').click(function() {
+        calculate('add');
+    });
+
+    $('#subtractBtn').click(function() {
+        calculate('subtract');
+    });
+
+    $('#multiplyBtn').click(function() {
+        calculate('multiply');
+    });
+
+    $('#divideBtn').click(function() {
+        calculate('divide');
+    });
+
+    $('#historyBtn').click(function() {
+        fetchHistory();
+    });
+
+    $('#clearHistoryBtn').click(function() {
+        clearHistory();
+    });
+});
+</script>
+</body>
+</html>
